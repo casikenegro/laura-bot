@@ -15,7 +15,7 @@ const {
   calcularPercentilGrasa,
 } = require("./utils");
 const TOKEN = "7804878428:AAGxzPB0be7bN8uvDN3NVTy5M_NAGqBQ5uQ";
-const bot = new TelegramBot(TOKEN, { polling: true });
+const bot = new TelegramBot(TOKEN, { polling: false });
 const axios = require("axios"); // Asegúrate de instalar axios con `npm install axios`
 
 const GOOGLE_SHEETS_URL = `https://script.google.com/macros/s/AKfycbxDF_TAbLAYNYu5QsuGcImqHC6PO-Fle6fXFlvSt1LJjZs6HfXMj3d3IgbBQodmFSGs/exec`;
