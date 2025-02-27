@@ -161,47 +161,51 @@ bot.on("message", async (msg) => {
     };
     return bot.sendMessage(
       chatId,
-      "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
+      `✅ ¡Hola, por favor, ingresa el nombre del paciente`
     );
+    // return bot.sendMessage(
+    //   chatId,
+    //   "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
+    // );
   }
 
   // Primero, verificar si el teléfono ya ha sido proporcionado y validado.
-  if (!usuario.telefono) {
-    if (!/^\d{10,}$/.test(text)) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El número debe ser válido (al menos 10 dígitos). Inténtalo de nuevo."
-      );
-    }
-    usuario.telefono = text;
-    return bot.sendMessage(
-      chatId,
-      `🔍 Confirmas que tu número es *${text}*?\n\nResponde *Sí* o *No*`,
-      { parse_mode: "Markdown" }
-    );
-  }
+  // if (!usuario.telefono) {
+  //   if (!/^\d{10,}$/.test(text)) {
+  //     return bot.sendMessage(
+  //       chatId,
+  //       "❌ El número debe ser válido (al menos 10 dígitos). Inténtalo de nuevo."
+  //     );
+  //   }
+  //   usuario.telefono = text;
+  //   return bot.sendMessage(
+  //     chatId,
+  //     `🔍 Confirmas que tu número es *${text}*?\n\nResponde *Sí* o *No*`,
+  //     { parse_mode: "Markdown" }
+  //   );
+  // }
 
   // Validación del número de teléfono
-  if (!usuario.confirmado) {
-    if (text.toLowerCase() === "si") {
-      usuario.confirmado = true;
-      return bot.sendMessage(
-        chatId,
-        `✅ ¡Hola, por favor, ingresa el nombre del paciente`
-      );
-    } else if (text.toLowerCase() === "no") {
-      usuario.telefono = null;
-      return bot.sendMessage(
-        chatId,
-        "❌ Número incorrecto. Ingresa nuevamente:"
-      );
-    } else {
-      return bot.sendMessage(
-        chatId,
-        "❌ Responde *Sí* o *No* para confirmar tu número."
-      );
-    }
-  }
+  // if (!usuario.confirmado) {
+  //   if (text.toLowerCase() === "si") {
+  //     usuario.confirmado = true;
+  //     return bot.sendMessage(
+  //       chatId,
+  //       `✅ ¡Hola, por favor, ingresa el nombre del paciente`
+  //     );
+  //   } else if (text.toLowerCase() === "no") {
+  //     usuario.telefono = null;
+  //     return bot.sendMessage(
+  //       chatId,
+  //       "❌ Número incorrecto. Ingresa nuevamente:"
+  //     );
+  //   } else {
+  //     return bot.sendMessage(
+  //       chatId,
+  //       "❌ Responde *Sí* o *No* para confirmar tu número."
+  //     );
+  //   }
+  // }
 
   // Preguntar por el nombre
   if (!usuario.nombre) {
@@ -329,10 +333,10 @@ bot.on("message", async (msg) => {
   ];
 
   let progreso = usuario.progreso;
-  console.log(progreso < preguntas.length);
+  console.log("progreso menor a  preguntas", progreso < preguntas.length);
   // Validación de las respuestas y avance en el flujo de preguntas
   if (progreso < preguntas.length) {
-    console.log(progreso);
+    console.log("posicion de progreso", progreso);
     let preguntaActual = preguntas[progreso];
 
     if (!preguntaActual.validacion.test(text)) {
@@ -341,8 +345,9 @@ bot.on("message", async (msg) => {
 
     // Guardamos la respuesta y avanzamos
     usuario[preguntaActual.key] = parseFloat(text);
+    console.log(usuario);
     usuario.progreso++;
-
+    console.log("progreso usuario", usuario.progreso);
     if (
       usuario.sexo &&
       usuario.sexo.toLowerCase() === "hombre" &&
@@ -350,6 +355,7 @@ bot.on("message", async (msg) => {
     ) {
       // Pregunta por el pectoral inspirado
       if (!usuario.pectoral_inspirado) {
+        console.log("entro a pectoral");
         if (/^\d+(\.\d+)?$/.test(text)) {
           usuario.pectoral_inspirado = parseFloat(text); // Guardamos la respuesta
           usuario.progreso++; // Avanzamos al siguiente paso
@@ -367,7 +373,9 @@ bot.on("message", async (msg) => {
       }
 
       // Pregunta por el pectoral espirado solo después de haber respondido correctamente al pectoral inspirado
-      if (!usuario.pectoral_espirado) {
+      if (usuario.pectoral_inspirado) {
+        console.log("entro a espirado");
+
         if (/^\d+(\.\d+)?$/.test(text)) {
           usuario.pectoral_espirado = parseFloat(text); // Guardamos la respuesta
           usuario.progreso++; // Esto te ayudará a avanzar en el flujo de preguntas si es necesario
@@ -379,10 +387,15 @@ bot.on("message", async (msg) => {
           );
         }
       }
+    }
+    if (
+      usuario.sexo.toLowerCase() === "mujer" &&
+      usuario.progreso === preguntas.length
+    )
+      usuario.progreso++;
 
-      if (preguntas[usuario.progreso].pregunta) {
-        return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
-      }
+    if (preguntas[usuario.progreso]?.pregunta) {
+      return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
     }
   }
   if (progreso >= preguntas.length) {
