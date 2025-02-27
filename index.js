@@ -352,8 +352,9 @@ bot.on("message", async (msg) => {
       );
     }
 
-    // Continuamos con la siguiente pregunta estándar
-    return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
+    if (preguntas[usuario.progreso].pregunta) {
+      return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
+    }
   }
 
   // Si ya completó todas las preguntas estándar y adicionales, finalizamos el proceso.
