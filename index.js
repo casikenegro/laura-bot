@@ -212,7 +212,7 @@ bot.on("message", async (msg) => {
     },
     {
       key: "sexo",
-      pregunta: "⚧️ ¿Cuál es tu *sexo*? (Hombre/Mujer)",
+      pregunta: "⚧️ ¿Cuál es tu *sexo*? (hombre/mujer)",
       validacion: /^(hombre|mujer)$/i,
       error: "❌ Ingresa un sexo válido: *Hombre* o *Mujer*.",
     },
