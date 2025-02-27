@@ -145,23 +145,21 @@ bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text.trim();
 
-  // Inicializa datos de usuario si es la primera vez que interactúa
   if (!usuarios[chatId]) {
-    usuarios[chatId] = { tlf: null, confirmado: false };
+    usuarios[chatId] = { tlf: null, confirmado: false, progreso: 0 };
   }
 
   let userData = usuarios[chatId];
 
   if (text.toLowerCase() === "/start") {
-    delete usuarios[chatId]; // Reinicia el proceso
-    usuarios[chatId] = { tlf: null, confirmado: false };
+    delete usuarios[chatId];
+    usuarios[chatId] = { tlf: null, confirmado: false, progreso: 0 };
     return bot.sendMessage(
       chatId,
       "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
     );
   }
 
-  // Validación del número de teléfono
   if (!userData.tlf) {
     if (!/^\d{10,}$/.test(text)) {
       return bot.sendMessage(
@@ -177,11 +175,10 @@ bot.on("message", async (msg) => {
     );
   }
 
-  // Confirmación del número
   if (!userData.confirmado) {
     if (text.toLowerCase() === "si") {
       userData.confirmado = true;
-      usuarios[userData.tlf] = { telefono: userData.tlf };
+      usuarios[userData.tlf] = { telefono: userData.tlf, progreso: 0 };
       return bot.sendMessage(
         chatId,
         "✅ Número confirmado. ¿Cuál es tu *nombre y apellido*?",
@@ -204,151 +201,162 @@ bot.on("message", async (msg) => {
   const tlf = userData.tlf;
   const userRegistro = usuarios[tlf];
 
-  // Validaciones estrictas en cada paso
-  if (!userRegistro.nombre) {
-    if (!/^[a-zA-Z\s]+$/.test(text)) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa un nombre válido (solo letras y espacios)."
-      );
-    }
-    userRegistro.nombre = text;
-    return bot.sendMessage(chatId, "📏 ¿Cuál es tu *estatura* en metros?", {
-      parse_mode: "Markdown",
-    });
-  }
-
-  if (!userRegistro.estatura) {
-    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa una estatura válida en metros (Ej: 1.75)."
-      );
-    }
-    userRegistro.estatura = parseFloat(text);
-    return bot.sendMessage(chatId, "⚧️ ¿Cuál es tu *sexo*? (Hombre/Mujer)", {
-      parse_mode: "Markdown",
-    });
-  }
-
-  if (!userRegistro.sexo) {
-    if (!["hombre", "mujer"].includes(text.toLowerCase())) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa un sexo válido: *Hombre* o *Mujer*."
-      );
-    }
-    userRegistro.sexo = text.toLowerCase();
-    return bot.sendMessage(chatId, "🎂 ¿Cuál es tu *edad*?", {
-      parse_mode: "Markdown",
-    });
-  }
-
-  if (!userRegistro.edad) {
-    if (!/^\d+$/.test(text) || parseInt(text) <= 0 || parseInt(text) > 150) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa una edad válida entre 1 y 150."
-      );
-    }
-    userRegistro.edad = parseInt(text);
-    return bot.sendMessage(chatId, "⚖️ ¿Cuál es tu *peso corporal* en kg?", {
-      parse_mode: "Markdown",
-    });
-  }
-
-  if (!userRegistro.peso) {
-    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa un peso válido en kg (Ej: 70.5)."
-      );
-    }
-    userRegistro.peso = parseFloat(text);
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *medida de hombros* en cm?",
-      { parse_mode: "Markdown" }
-    );
-  }
-
-  const medidas = [
+  // Preguntas en orden de flujo
+  const preguntas = [
+    {
+      key: "nombre",
+      pregunta: "📏 ¿Cuál es tu *estatura* en metros?",
+      validacion: /^[a-zA-Z\s]+$/,
+      error: "❌ Ingresa un nombre válido (solo letras y espacios).",
+    },
+    {
+      key: "estatura",
+      pregunta: "⚧️ ¿Cuál es tu *sexo*? (Hombre/Mujer)",
+      validacion: /^(hombre|mujer)$/i,
+      error: "❌ Ingresa un sexo válido: *Hombre* o *Mujer*.",
+    },
+    {
+      key: "sexo",
+      pregunta: "🎂 ¿Cuál es tu *edad*?",
+      validacion: /^(hombre|mujer)$/i,
+      error: "❌ Ingresa una edad válida entre 1 y 150.",
+    },
+    {
+      key: "edad",
+      pregunta: "⚖️ ¿Cuál es tu *peso corporal* en kg?",
+      validacion: /^\d+$/,
+      error: "❌ Ingresa una edad válida entre 1 y 150.",
+    },
+    {
+      key: "peso",
+      pregunta: "💪 ¿Cuál es tu *medida de hombros* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa un peso válido en kg (Ej: 70.5).",
+    },
     {
       key: "hombros",
       pregunta: "💪 ¿Cuál es tu *medida de brazo relajado* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "brazo_relajado",
       pregunta: "💪 ¿Cuál es tu *medida de brazo contraído* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
     },
-    { key: "brazo_contraido", pregunta: "📏 ¿Cuál es tu *cintura* en cm?" },
-    { key: "cintura", pregunta: "📏 ¿Cuál es tu *cadera* en cm?" },
-    { key: "cadera", pregunta: "📏 ¿Cuál es tu *muslo* en cm?" },
-    { key: "muslo", pregunta: "🍑 ¿Cuál es tu *glúteo* en cm?" },
-    { key: "gluteo", pregunta: "🦵 ¿Cuál es tu *pantorrilla* en cm?" },
     {
-      key: "pantorrilla",
-      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en bíceps* en cm?",
+      key: "brazo_contraido",
+      pregunta: "📏 ¿Cuál es tu *cintura* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
     },
+    {
+      key: "cintura",
+      pregunta: "📏 ¿Cuál es tu *cadera* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
+    },
+    {
+      key: "cadera",
+      pregunta: "📏 ¿Cuál es tu *muslo* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
+    },
+    {
+      key: "muslo",
+      pregunta: "🍑 ¿Cuál es tu *glúteo* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
+    },
+    {
+      key: "gluteo",
+      pregunta: "🦵 ¿Cuál es tu *pantorrilla* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
+    },
+    // Las preguntas de los pliegues cutáneos que faltaban
     {
       key: "pliegue_cutanios_biceps",
-      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en tríceps* en cm?",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en bíceps* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa un valor válido en cm.",
     },
     {
       key: "pliegue_cutanios_triceps",
-      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en subescapular* en cm?",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en tríceps* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa un valor válido en cm.",
     },
     {
       key: "pliegue_cutanios_subescapular",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en subescapular* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa un valor válido en cm.",
+    },
+    {
+      key: "pliegue_cutanios_suprailiaco",
       pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en suprailiaco* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa un valor válido en cm.",
     },
   ];
 
-  for (let medida of medidas) {
-    if (!userRegistro[medida.key]) {
-      if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-        return bot.sendMessage(
-          chatId,
-          `❌ Ingresa un valor válido en cm (Ej: 35.5) para ${medida.key.replace(
-            /_/g,
-            " "
-          )}.`
-        );
-      }
-      userRegistro[medida.key] = parseFloat(text);
-      return bot.sendMessage(chatId, medida.pregunta, {
-        parse_mode: "Markdown",
-      });
-    }
-  }
+  let progreso = userRegistro.progreso;
 
-  if (userRegistro.sexo === "hombre") {
-    if (!userRegistro.pectoral_inspirado) {
-      if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+  if (progreso < preguntas.length) {
+    let preguntaActual = preguntas[progreso];
+
+    if (!preguntaActual.validacion.test(text)) {
+      return bot.sendMessage(chatId, preguntaActual.error);
+    }
+
+    userRegistro[preguntaActual.key] = parseFloat(text);
+    userRegistro.progreso++;
+
+    if (userRegistro.sexo.toLowerCase() === "hombre") {
+      // Validaciones específicas para los hombres
+      if (userRegistro.progreso === 6) {
         return bot.sendMessage(
           chatId,
-          "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
+          "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
+          { parse_mode: "Markdown" }
         );
       }
-      userRegistro.pectoral_inspirado = parseFloat(text);
+
+      if (userRegistro.progreso === 7) {
+        if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+          return bot.sendMessage(
+            chatId,
+            "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
+          );
+        }
+        userRegistro.pectoral_inspirado = parseFloat(text);
+        return bot.sendMessage(
+          chatId,
+          "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
+          { parse_mode: "Markdown" }
+        );
+      }
+
+      if (userRegistro.progreso === 8) {
+        if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+          return bot.sendMessage(
+            chatId,
+            "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
+          );
+        }
+        userRegistro.pectoral_espirado = parseFloat(text);
+      }
+    }
+
+    if (userRegistro.progreso < preguntas.length) {
       return bot.sendMessage(
         chatId,
-        "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
+        preguntas[userRegistro.progreso].pregunta,
         { parse_mode: "Markdown" }
       );
     }
-
-    if (!userRegistro.pectoral_espirado) {
-      if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-        return bot.sendMessage(
-          chatId,
-          "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
-        );
-      }
-      userRegistro.pectoral_espirado = parseFloat(text);
-    }
   }
-
-  // Procesar y enviar los datos
-  procesarDatos(chatId, userRegistro);
+  await procesarDatos(chatId, userRegistro);
 });
