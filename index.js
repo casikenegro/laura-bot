@@ -43,7 +43,13 @@ const enviarDatosAGoogleSheets = async (datos) => {
 
 // Eliminar cualquier rastro de fs o almacenamiento en JSON
 
-let usuarios = {}; // Usamos solo en memoria
+let usuario = {
+  tlf: null,
+  confirmado: false,
+  progreso: 0,
+  nombre: null,
+  sexo: null,
+};
 
 const procesarDatos = async (chatId, userRegistro) => {
   console.log(userRegistro);
@@ -117,57 +123,56 @@ const procesarDatos = async (chatId, userRegistro) => {
   );
 };
 
-// Comando para consultar datos
-bot.onText(/\/consultar (\d+)/, (msg, match) => {
-  const chatId = msg.chat.id;
-  const tlf = match[1];
+// // Comando para consultar datos
+// bot.onText(/\/consultar (\d+)/, (msg, match) => {
+//   const chatId = msg.chat.id;
+//   const tlf = match[1];
 
-  if (!usuarios[tlf]) {
-    return bot.sendMessage(
-      chatId,
-      "❌ No hay datos registrados para esta cédula."
-    );
-  }
+//   if (!usuarios[tlf]) {
+//     return bot.sendMessage(
+//       chatId,
+//       "❌ No hay datos registrados para esta cédula."
+//     );
+//   }
 
-  const userData = usuarios[tlf];
-  let respuesta = `📋 *Información de ${userData.nombre}:*\n\n`;
-  respuesta += `📌 *Edad:* ${userData.edad} años\n`;
-  respuesta += `⚧️ *Sexo:* ${userData.sexo}\n`;
-  respuesta += `📏 *Estatura:* ${userData.estatura} m\n`;
-  respuesta += `⚖️ *Peso:* ${userData.peso} kg\n\n`;
-  respuesta += `📊 *Historial de mediciones:*\n`;
-  respuesta += `\n📅 *Fecha:* ${userData.fecha}\n💪 *IMC:* ${userData.imc}\n📏 *ICC:* ${userData.icc}\n🔥 *Grasa Corporal:* ${userData.porcentajeGrasa}%`;
+//   const userData = usuarios[tlf];
+//   let respuesta = `📋 *Información de ${userData.nombre}:*\n\n`;
+//   respuesta += `📌 *Edad:* ${userData.edad} años\n`;
+//   respuesta += `⚧️ *Sexo:* ${userData.sexo}\n`;
+//   respuesta += `📏 *Estatura:* ${userData.estatura} m\n`;
+//   respuesta += `⚖️ *Peso:* ${userData.peso} kg\n\n`;
+//   respuesta += `📊 *Historial de mediciones:*\n`;
+//   respuesta += `\n📅 *Fecha:* ${userData.fecha}\n💪 *IMC:* ${userData.imc}\n📏 *ICC:* ${userData.icc}\n🔥 *Grasa Corporal:* ${userData.porcentajeGrasa}%`;
 
-  bot.sendMessage(chatId, respuesta, { parse_mode: "Markdown" });
-});
+//   bot.sendMessage(chatId, respuesta, { parse_mode: "Markdown" });
+// });
 
 bot.on("message", async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text.trim();
 
-  if (!usuarios[chatId]) {
-    usuarios[chatId] = { tlf: null, confirmado: false, progreso: 0 };
-  }
-
-  let userData = usuarios[chatId];
-
   if (text.toLowerCase() === "/start") {
-    delete usuarios[chatId];
-    usuarios[chatId] = { tlf: null, confirmado: false, progreso: 0 };
+    usuario = {
+      telefono: null,
+      confirmado: false,
+      progreso: 0,
+      nombre: null,
+      sexo: null,
+    };
     return bot.sendMessage(
       chatId,
       "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
     );
   }
 
-  if (!userData.tlf) {
+  if (!usuario.telefono) {
     if (!/^\d{10,}$/.test(text)) {
       return bot.sendMessage(
         chatId,
         "❌ El número debe ser válido (al menos 10 dígitos). Inténtalo de nuevo."
       );
     }
-    userData.tlf = text;
+    userData.telefono = text;
     return bot.sendMessage(
       chatId,
       `🔍 Confirmas que tu número es *${text}*?\n\nResponde *Sí* o *No*`,
@@ -175,12 +180,11 @@ bot.on("message", async (msg) => {
     );
   }
 
-  if (!userData.confirmado) {
+  if (!usuario.confirmado) {
     if (text.toLowerCase() === "si") {
-      userData.confirmado = true;
-      usuarios[userData.tlf] = { telefono: userData.tlf, progreso: 0 };
+      usuario.confirmado = true;
     } else if (text.toLowerCase() === "no") {
-      userData.tlf = null;
+      usuario.telefono = null;
       return bot.sendMessage(
         chatId,
         "❌ Número incorrecto. Ingresa nuevamente:"
@@ -193,11 +197,9 @@ bot.on("message", async (msg) => {
     }
   }
 
-  const tlf = userData.tlf;
-  const userRegistro = usuarios[tlf];
-  if (!userRegistro.nombre) {
+  if (!usuario.nombre) {
     if (/^[a-zA-Z\s]+$/.test(text.toLowerCase())) {
-      userRegistro.nombre = text.toLowerCase();
+      usuario.nombre = text.toLowerCase();
     } else {
       return bot.sendMessage(
         chatId,
@@ -206,9 +208,9 @@ bot.on("message", async (msg) => {
     }
   }
 
-  if (!userRegistro.sexo) {
+  if (!usuario.sexo) {
     if (/^(hombre|mujer)$/i.test(text.toLowerCase())) {
-      userRegistro.sexo = text.toLowerCase();
+      usuario.sexo = text.toLowerCase();
     } else {
       return bot.sendMessage(
         chatId,
@@ -312,7 +314,7 @@ bot.on("message", async (msg) => {
     },
   ];
 
-  let progreso = userRegistro.progreso;
+  let progreso = usuario.progreso;
 
   if (progreso < preguntas.length) {
     let preguntaActual = preguntas[progreso];
@@ -321,13 +323,13 @@ bot.on("message", async (msg) => {
       return bot.sendMessage(chatId, preguntaActual.error);
     }
 
-    userRegistro[preguntaActual.key] = parseFloat(text);
-    userRegistro.progreso++;
+    usuario[preguntaActual.key] = parseFloat(text);
+    usuario.progreso++;
 
-    if (userRegistro.sexo && userRegistro.sexo.toLowerCase() === "hombre") {
-      console.log(userRegistro.progreso);
+    if (usuario.sexo && usuario.sexo.toLowerCase() === "hombre") {
+      console.log(usuario.progreso);
       // Proceder con las validaciones específicas para hombres
-      if (userRegistro.progreso === 15) {
+      if (usario.progreso === 15) {
         return bot.sendMessage(
           chatId,
           "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
@@ -335,14 +337,14 @@ bot.on("message", async (msg) => {
         );
       }
 
-      if (userRegistro.progreso === 16) {
+      if (usario.progreso === 16) {
         if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
           return bot.sendMessage(
             chatId,
             "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
           );
         }
-        userRegistro.pectoral_inspirado = parseFloat(text);
+        usario.pectoral_inspirado = parseFloat(text);
         return bot.sendMessage(
           chatId,
           "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
@@ -350,24 +352,22 @@ bot.on("message", async (msg) => {
         );
       }
 
-      if (userRegistro.progreso === 17) {
+      if (usario.progreso === 17) {
         if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
           return bot.sendMessage(
             chatId,
             "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
           );
         }
-        userRegistro.pectoral_espirado = parseFloat(text);
+        usario.pectoral_espirado = parseFloat(text);
       }
     }
 
-    if (userRegistro.progreso < preguntas.length) {
-      return bot.sendMessage(
-        chatId,
-        preguntas[userRegistro.progreso].pregunta,
-        { parse_mode: "Markdown" }
-      );
+    if (usario.progreso < preguntas.length) {
+      return bot.sendMessage(chatId, preguntas[usario.progreso].pregunta, {
+        parse_mode: "Markdown",
+      });
     }
   }
-  await procesarDatos(chatId, userRegistro);
+  await procesarDatos(chatId, usario);
 });
