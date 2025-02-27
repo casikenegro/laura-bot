@@ -195,27 +195,36 @@ bot.on("message", async (msg) => {
 
   const tlf = userData.tlf;
   const userRegistro = usuarios[tlf];
+  if (!userRegistro.nombre) {
+    if (/^[a-zA-Z\s]+$/.test(text.toLowerCase())) {
+      userRegistro.nombre = text.toLowerCase();
+    } else {
+      return bot.sendMessage(
+        chatId,
+        "❌ Ingresa un nombre y apellido válido (solo letras y espacios)."
+      );
+    }
+  }
 
+  if (!userRegistro.sexo) {
+    if (/^(hombre|mujer)$/i.test(text.toLowerCase())) {
+      userRegistro.sexo = text.toLowerCase();
+    } else {
+      return bot.sendMessage(
+        chatId,
+        "❌ Ingresa un sexo válido: *Hombre* o *Mujer*."
+      );
+    }
+  }
   // Preguntas en orden de flujo
   const preguntas = [
-    {
-      key: "nombre",
-      pregunta: "📝 ¿Cuál es tu *nombre y apellido*?",
-      validacion: /^[a-zA-Z\s]+$/,
-      error: "❌ Ingresa un nombre y apellido válido (solo letras y espacios).",
-    },
     {
       key: "estatura",
       pregunta: "📏 ¿Cuál es tu *estatura* en metros?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una estatura válida en metros (Ej: 1.75).",
     },
-    {
-      key: "sexo",
-      pregunta: "⚧️ ¿Cuál es tu *sexo*? (hombre/mujer)",
-      validacion: /^(hombre|mujer)$/i,
-      error: "❌ Ingresa un sexo válido: *Hombre* o *Mujer*.",
-    },
+
     {
       key: "edad",
       pregunta: "🎂 ¿Cuál es tu *edad*?",
@@ -316,8 +325,9 @@ bot.on("message", async (msg) => {
     userRegistro.progreso++;
 
     if (userRegistro.sexo && userRegistro.sexo.toLowerCase() === "hombre") {
+      console.log(userRegistro.progreso);
       // Proceder con las validaciones específicas para hombres
-      if (userRegistro.progreso === 17) {
+      if (userRegistro.progreso === 15) {
         return bot.sendMessage(
           chatId,
           "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
@@ -325,7 +335,7 @@ bot.on("message", async (msg) => {
         );
       }
 
-      if (userRegistro.progreso === 18) {
+      if (userRegistro.progreso === 16) {
         if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
           return bot.sendMessage(
             chatId,
@@ -340,7 +350,7 @@ bot.on("message", async (msg) => {
         );
       }
 
-      if (userRegistro.progreso === 19) {
+      if (userRegistro.progreso === 17) {
         if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
           return bot.sendMessage(
             chatId,
