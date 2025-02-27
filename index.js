@@ -153,8 +153,8 @@ bot.on("message", async (msg) => {
   let userData = usuarios[chatId];
 
   if (text.toLowerCase() === "/start") {
-    delete usuarios[chatId]; // Elimina los datos actuales del usuario
-    usuarios[chatId] = { tlf: null, confirmado: false }; // Reinicia el proceso
+    delete usuarios[chatId]; // Reinicia el proceso
+    usuarios[chatId] = { tlf: null, confirmado: false };
     return bot.sendMessage(
       chatId,
       "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
@@ -181,45 +181,7 @@ bot.on("message", async (msg) => {
   if (!userData.confirmado) {
     if (text.toLowerCase() === "si") {
       userData.confirmado = true;
-      // Inicialización del registro del usuario
-      usuarios[userData.tlf] = {
-        telefono: userData.tlf,
-        nombre: null,
-        estatura: null,
-        sexo: null,
-        edad: null,
-        peso: null,
-        hombros: null,
-        brazo_relajado: null,
-        brazo_contraido: null,
-        cintura: null,
-        cadera: null,
-        muslo: null,
-        gluteo: null,
-        pantorrilla: null,
-        pliegue_cutanios_biceps: null,
-        pliegue_cutanios_triceps: null,
-        pliegue_cutanios_subescapular: null,
-        pliegue_cutanios_suprailiaco: null,
-        pectoral_inspirado: null,
-        pectoral_espirado: null,
-        fecha: null,
-        imc: null,
-        icc: null,
-        iccDiagnostico: null,
-        percentilGrasa: null,
-        porcentajeGrasa: null,
-        masaGrasa: null,
-        masaLibreGrasa: null,
-        consumoProteinas: null,
-        masaMuscular: null,
-        GEB: null,
-        ETA: null,
-        GEB_ETA: null,
-        GAF: null,
-        caloriasTotales: null,
-        caloriasRequeridas: null,
-      };
+      usuarios[userData.tlf] = { telefono: userData.tlf };
       return bot.sendMessage(
         chatId,
         "✅ Número confirmado. ¿Cuál es tu *nombre y apellido*?",
@@ -242,33 +204,35 @@ bot.on("message", async (msg) => {
   const tlf = userData.tlf;
   const userRegistro = usuarios[tlf];
 
-  // Comienza a preguntar datos personales y medidas
+  // Validaciones estrictas en cada paso
   if (!userRegistro.nombre) {
     if (!/^[a-zA-Z\s]+$/.test(text)) {
       return bot.sendMessage(
         chatId,
-        "❌ El nombre debe contener solo letras y espacios. Inténtalo de nuevo."
+        "❌ Ingresa un nombre válido (solo letras y espacios)."
       );
     }
     userRegistro.nombre = text;
     return bot.sendMessage(chatId, "📏 ¿Cuál es tu *estatura* en metros?", {
       parse_mode: "Markdown",
     });
-  } else if (!userRegistro.estatura) {
-    const estatura = parseFloat(text);
-    if (isNaN(estatura) || estatura <= 0) {
+  }
+
+  if (!userRegistro.estatura) {
+    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
       return bot.sendMessage(
         chatId,
-        "❌ La estatura debe ser un número válido mayor que 0. Inténtalo de nuevo."
+        "❌ Ingresa una estatura válida en metros (Ej: 1.75)."
       );
     }
-    userRegistro.estatura = estatura;
+    userRegistro.estatura = parseFloat(text);
     return bot.sendMessage(chatId, "⚧️ ¿Cuál es tu *sexo*? (Hombre/Mujer)", {
       parse_mode: "Markdown",
     });
-  } else if (!userRegistro.sexo) {
-    const sexoValidos = ["hombre", "mujer"];
-    if (!sexoValidos.includes(text.toLowerCase())) {
+  }
+
+  if (!userRegistro.sexo) {
+    if (!["hombre", "mujer"].includes(text.toLowerCase())) {
       return bot.sendMessage(
         chatId,
         "❌ Ingresa un sexo válido: *Hombre* o *Mujer*."
@@ -278,243 +242,113 @@ bot.on("message", async (msg) => {
     return bot.sendMessage(chatId, "🎂 ¿Cuál es tu *edad*?", {
       parse_mode: "Markdown",
     });
-  } else if (!userRegistro.edad) {
-    const edad = parseInt(text);
-    if (isNaN(edad) || edad <= 0 || edad > 150) {
+  }
+
+  if (!userRegistro.edad) {
+    if (!/^\d+$/.test(text) || parseInt(text) <= 0 || parseInt(text) > 150) {
       return bot.sendMessage(
         chatId,
-        "❌ La edad debe ser un número válido entre 1 y 150. Inténtalo de nuevo."
+        "❌ Ingresa una edad válida entre 1 y 150."
       );
     }
-    userRegistro.edad = edad;
+    userRegistro.edad = parseInt(text);
     return bot.sendMessage(chatId, "⚖️ ¿Cuál es tu *peso corporal* en kg?", {
       parse_mode: "Markdown",
     });
-  } else if (!userRegistro.peso) {
-    const peso = parseFloat(text);
-    if (isNaN(peso) || peso <= 0) {
+  }
+
+  if (!userRegistro.peso) {
+    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
       return bot.sendMessage(
         chatId,
-        "❌ El peso debe ser un número válido mayor que 0. Inténtalo de nuevo."
+        "❌ Ingresa un peso válido en kg (Ej: 70.5)."
       );
     }
-    userRegistro.peso = peso;
+    userRegistro.peso = parseFloat(text);
     return bot.sendMessage(
       chatId,
       "💪 ¿Cuál es tu *medida de hombros* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
+      { parse_mode: "Markdown" }
     );
-  } else if (!userRegistro.hombros) {
-    const hombros = parseFloat(text);
-    if (isNaN(hombros) || hombros <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida de hombros debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.hombros = hombros;
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *medida de brazo relajado* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (!userRegistro.brazo_relajado) {
-    const brazoRelajado = parseFloat(text);
-    if (isNaN(brazoRelajado) || brazoRelajado <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida del brazo relajado debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.brazo_relajado = brazoRelajado;
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *medida de brazo contraído* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (!userRegistro.brazo_contraido) {
-    const brazoContraido = parseFloat(text);
-    if (isNaN(brazoContraido) || brazoContraido <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida del brazo contraído debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.brazo_contraido = brazoContraido;
-    return bot.sendMessage(chatId, "📏 ¿Cuál es tu *cintura* en cm?", {
-      parse_mode: "Markdown",
-    });
-  } else if (!userRegistro.cintura) {
-    const cintura = parseFloat(text);
-    if (isNaN(cintura) || cintura <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida de la cintura debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.cintura = cintura;
-    return bot.sendMessage(chatId, "📏 ¿Cuál es tu *cadera* en cm?", {
-      parse_mode: "Markdown",
-    });
-  } else if (!userRegistro.cadera) {
-    const cadera = parseFloat(text);
-    if (isNaN(cadera) || cadera <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida de la cadera debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.cadera = cadera;
-    return bot.sendMessage(chatId, "📏 ¿Cuál es tu *muslo* en cm?", {
-      parse_mode: "Markdown",
-    });
-  } else if (!userRegistro.muslo) {
-    const muslo = parseFloat(text);
-    if (isNaN(muslo) || muslo <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida del muslo debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.muslo = muslo;
-    return bot.sendMessage(chatId, "🍑 ¿Cuál es tu *glúteo* en cm?", {
-      parse_mode: "Markdown",
-    });
-  } else if (!userRegistro.gluteo) {
-    const gluteo = parseFloat(text);
-    if (isNaN(gluteo) || gluteo <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida del glúteo debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.gluteo = gluteo;
-    return bot.sendMessage(chatId, "🦵 ¿Cuál es tu *pantorrilla* en cm?", {
-      parse_mode: "Markdown",
-    });
-  } else if (!userRegistro.pantorrilla) {
-    const pantorrilla = parseFloat(text);
-    if (isNaN(pantorrilla) || pantorrilla <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ La medida de la pantorrilla debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pantorrilla = pantorrilla;
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *pliegue cutáneo en biceps* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (!userRegistro.pliegue_cutanios_biceps) {
-    const biceps = parseFloat(text);
-    if (isNaN(biceps) || biceps <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El pliegue cutáneo en bíceps debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pliegue_cutanios_biceps = biceps;
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *pliegue cutáneo en triceps* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (!userRegistro.pliegue_cutanios_triceps) {
-    const triceps = parseFloat(text);
-    if (isNaN(triceps) || triceps <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El pliegue cutáneo en tríceps debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pliegue_cutanios_triceps = triceps;
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *pliegue cutáneo en subescapular* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (!userRegistro.pliegue_cutanios_subescapular) {
-    const subescapular = parseFloat(text);
-    if (isNaN(subescapular) || subescapular <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El pliegue cutáneo en subescapular debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pliegue_cutanios_subescapular = subescapular;
-    return bot.sendMessage(
-      chatId,
-      "💪 ¿Cuál es tu *pliegue cutáneo en suprailiaco* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (!userRegistro.pliegue_cutanios_suprailiaco) {
-    const suprailiaco = parseFloat(text);
-    if (isNaN(suprailiaco) || suprailiaco <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El pliegue cutáneo en suprailiaco debe ser un número válido en mm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pliegue_cutanios_suprailiaco = suprailiaco;
-  } else if (
-    userRegistro.sexo === "hombre" &&
-    userRegistro.pectoral_inspirado === null
-  ) {
-    return bot.sendMessage(
-      chatId,
-      "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (
-    userRegistro.sexo === "hombre" &&
-    userRegistro.pectoral_inspirado === undefined
-  ) {
-    const pectoral = parseFloat(text);
-    if (isNaN(pectoral) || pectoral <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El pectoral inspirado debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pectoral_inspirado = pectoral;
-    return bot.sendMessage(
-      chatId,
-      "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
-      {
-        parse_mode: "Markdown",
-      }
-    );
-  } else if (
-    userRegistro.sexo === "hombre" &&
-    userRegistro.pectoral_espirado === null
-  ) {
-    const pectoralEspirado = parseFloat(text);
-    if (isNaN(pectoralEspirado) || pectoralEspirado <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ El pectoral espirado debe ser un número válido en cm. Inténtalo de nuevo."
-      );
-    }
-    userRegistro.pectoral_espirado = pectoralEspirado;
   }
 
-  // Procesar los datos y enviarlos a Google Sheets
+  const medidas = [
+    {
+      key: "hombros",
+      pregunta: "💪 ¿Cuál es tu *medida de brazo relajado* en cm?",
+    },
+    {
+      key: "brazo_relajado",
+      pregunta: "💪 ¿Cuál es tu *medida de brazo contraído* en cm?",
+    },
+    { key: "brazo_contraido", pregunta: "📏 ¿Cuál es tu *cintura* en cm?" },
+    { key: "cintura", pregunta: "📏 ¿Cuál es tu *cadera* en cm?" },
+    { key: "cadera", pregunta: "📏 ¿Cuál es tu *muslo* en cm?" },
+    { key: "muslo", pregunta: "🍑 ¿Cuál es tu *glúteo* en cm?" },
+    { key: "gluteo", pregunta: "🦵 ¿Cuál es tu *pantorrilla* en cm?" },
+    {
+      key: "pantorrilla",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en bíceps* en cm?",
+    },
+    {
+      key: "pliegue_cutanios_biceps",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en tríceps* en cm?",
+    },
+    {
+      key: "pliegue_cutanios_triceps",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en subescapular* en cm?",
+    },
+    {
+      key: "pliegue_cutanios_subescapular",
+      pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en suprailiaco* en cm?",
+    },
+  ];
+
+  for (let medida of medidas) {
+    if (!userRegistro[medida.key]) {
+      if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+        return bot.sendMessage(
+          chatId,
+          `❌ Ingresa un valor válido en cm (Ej: 35.5) para ${medida.key.replace(
+            /_/g,
+            " "
+          )}.`
+        );
+      }
+      userRegistro[medida.key] = parseFloat(text);
+      return bot.sendMessage(chatId, medida.pregunta, {
+        parse_mode: "Markdown",
+      });
+    }
+  }
+
+  if (userRegistro.sexo === "hombre") {
+    if (!userRegistro.pectoral_inspirado) {
+      if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+        return bot.sendMessage(
+          chatId,
+          "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
+        );
+      }
+      userRegistro.pectoral_inspirado = parseFloat(text);
+      return bot.sendMessage(
+        chatId,
+        "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
+        { parse_mode: "Markdown" }
+      );
+    }
+
+    if (!userRegistro.pectoral_espirado) {
+      if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+        return bot.sendMessage(
+          chatId,
+          "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
+        );
+      }
+      userRegistro.pectoral_espirado = parseFloat(text);
+    }
+  }
+
+  // Procesar y enviar los datos
   procesarDatos(chatId, userRegistro);
 });
