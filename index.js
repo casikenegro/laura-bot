@@ -54,10 +54,10 @@ const procesarDatos = async (chatId, userRegistro) => {
   const imc = calcularIMC(userRegistro.peso, userRegistro.estatura);
   const icc = calcularICC(userRegistro.cintura, userRegistro.cadera);
   const grasa = calcularPercentilGrasa(userRegistro.sexo, userRegistro.edad, {
-    biceps: userRegistro.biceps,
-    triceps: userRegistro.triceps,
-    subescapular: userRegistro.subescapular,
-    suprailiaco: userRegistro.suprailiaco,
+    biceps: userRegistro.pliegue_cutanios_biceps,
+    triceps: userRegistro.pliegue_cutanios_triceps,
+    subescapular: userRegistro.pliegue_cutanios_subescapular,
+    suprailiaco: userRegistro.pliegue_cutanios_suprailiaco,
   });
   console.log("grasa", grasa);
   const masaGrasa = calcularMasaGrasa(userRegistro.peso, grasa.porcentajeGrasa);
@@ -204,78 +204,78 @@ bot.on("message", async (msg) => {
   // Preguntas en orden de flujo
   const preguntas = [
     {
-      key: "nombre",
+      key: "estatura",
       pregunta: "📏 ¿Cuál es tu *estatura* en metros?",
-      validacion: /^[a-zA-Z\s]+$/,
-      error: "❌ Ingresa un nombre válido (solo letras y espacios).",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una estatura válida en metros (Ej: 1.75).",
     },
     {
-      key: "estatura",
+      key: "sexo",
       pregunta: "⚧️ ¿Cuál es tu *sexo*? (Hombre/Mujer)",
       validacion: /^(hombre|mujer)$/i,
       error: "❌ Ingresa un sexo válido: *Hombre* o *Mujer*.",
     },
     {
-      key: "sexo",
-      pregunta: "🎂 ¿Cuál es tu *edad*?",
-      validacion: /^(hombre|mujer)$/i,
-      error: "❌ Ingresa una edad válida entre 1 y 150.",
-    },
-    {
       key: "edad",
-      pregunta: "⚖️ ¿Cuál es tu *peso corporal* en kg?",
-      validacion: /^\d+$/,
+      pregunta: "🎂 ¿Cuál es tu *edad*?",
+      validacion: /^\d{1,3}$/,
       error: "❌ Ingresa una edad válida entre 1 y 150.",
     },
     {
       key: "peso",
-      pregunta: "💪 ¿Cuál es tu *medida de hombros* en cm?",
-      validacion: /^\d+(\.\d+)?$/,
-      error: "❌ Ingresa un peso válido en kg (Ej: 70.5).",
+      pregunta: "⚖️ ¿Cuál es tu *peso corporal* en kg?",
+      validacion: /^\d+$/,
+      error: "❌ Ingresa un peso válido en kg.",
     },
     {
       key: "hombros",
-      pregunta: "💪 ¿Cuál es tu *medida de brazo relajado* en cm?",
+      pregunta: "💪 ¿Cuál es tu *medida de hombros* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "brazo_relajado",
-      pregunta: "💪 ¿Cuál es tu *medida de brazo contraído* en cm?",
+      pregunta: "💪 ¿Cuál es tu *medida de brazo relajado* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "brazo_contraido",
-      pregunta: "📏 ¿Cuál es tu *cintura* en cm?",
+      pregunta: "💪 ¿Cuál es tu *medida de brazo contraído* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "cintura",
-      pregunta: "📏 ¿Cuál es tu *cadera* en cm?",
+      pregunta: "📏 ¿Cuál es tu *cintura* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "cadera",
-      pregunta: "📏 ¿Cuál es tu *muslo* en cm?",
+      pregunta: "📏 ¿Cuál es tu *cadera* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "muslo",
-      pregunta: "🍑 ¿Cuál es tu *glúteo* en cm?",
+      pregunta: "📏 ¿Cuál es tu *muslo* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
     {
       key: "gluteo",
+      pregunta: "🍑 ¿Cuál es tu *glúteo* en cm?",
+      validacion: /^\d+(\.\d+)?$/,
+      error: "❌ Ingresa una medida válida en cm.",
+    },
+    {
+      key: "pantorrilla",
       pregunta: "🦵 ¿Cuál es tu *pantorrilla* en cm?",
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
-    // Las preguntas de los pliegues cutáneos que faltaban
+    // Las preguntas de los pliegues cutáneos
     {
       key: "pliegue_cutanios_biceps",
       pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en bíceps* en cm?",
@@ -314,9 +314,9 @@ bot.on("message", async (msg) => {
     userRegistro[preguntaActual.key] = parseFloat(text);
     userRegistro.progreso++;
 
-    if (userRegistro.sexo.toLowerCase() === "hombre") {
-      // Validaciones específicas para los hombres
-      if (userRegistro.progreso === 6) {
+    if (userRegistro.sexo && userRegistro.sexo.toLowerCase() === "hombre") {
+      // Proceder con las validaciones específicas para hombres
+      if (userRegistro.progreso === 17) {
         return bot.sendMessage(
           chatId,
           "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
@@ -324,7 +324,7 @@ bot.on("message", async (msg) => {
         );
       }
 
-      if (userRegistro.progreso === 7) {
+      if (userRegistro.progreso === 18) {
         if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
           return bot.sendMessage(
             chatId,
@@ -339,7 +339,7 @@ bot.on("message", async (msg) => {
         );
       }
 
-      if (userRegistro.progreso === 8) {
+      if (userRegistro.progreso === 19) {
         if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
           return bot.sendMessage(
             chatId,
