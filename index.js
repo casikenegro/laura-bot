@@ -165,6 +165,7 @@ bot.on("message", async (msg) => {
     );
   }
 
+  // Primero, verificar si el teléfono ya ha sido proporcionado y validado.
   if (!usuario.telefono) {
     if (!/^\d{10,}$/.test(text)) {
       return bot.sendMessage(
@@ -180,6 +181,7 @@ bot.on("message", async (msg) => {
     );
   }
 
+  // Validación del número de teléfono
   if (!usuario.confirmado) {
     if (text.toLowerCase() === "si") {
       usuario.confirmado = true;
@@ -197,9 +199,14 @@ bot.on("message", async (msg) => {
     }
   }
 
+  // Preguntar por el nombre
   if (!usuario.nombre) {
-    if (/^[a-zA-Z\s]+$/.test(text.toLowerCase())) {
-      usuario.nombre = text.toLowerCase();
+    if (/^[a-zA-Z\s]+$/.test(text)) {
+      usuario.nombre = text;
+      return bot.sendMessage(
+        chatId,
+        `✅ ¡Hola, ${text}! Ahora, por favor, ingresa tu sexo: *Hombre* o *Mujer*`
+      );
     } else {
       return bot.sendMessage(
         chatId,
@@ -208,9 +215,14 @@ bot.on("message", async (msg) => {
     }
   }
 
+  // Preguntar por el sexo
   if (!usuario.sexo) {
-    if (/^(hombre|mujer)$/i.test(text.toLowerCase())) {
+    if (/^(hombre|mujer)$/i.test(text)) {
       usuario.sexo = text.toLowerCase();
+      return bot.sendMessage(
+        chatId,
+        "Gracias por proporcionar tu sexo. 📏 ¿Cuál es tu *estatura* en metros? ."
+      );
     } else {
       return bot.sendMessage(
         chatId,
@@ -226,7 +238,6 @@ bot.on("message", async (msg) => {
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una estatura válida en metros (Ej: 1.75).",
     },
-
     {
       key: "edad",
       pregunta: "🎂 ¿Cuál es tu *edad*?",
@@ -287,7 +298,6 @@ bot.on("message", async (msg) => {
       validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa una medida válida en cm.",
     },
-    // Las preguntas de los pliegues cutáneos
     {
       key: "pliegue_cutanios_biceps",
       pregunta: "💪 ¿Cuál es tu *pliegue cutáneo en bíceps* en cm?",
@@ -315,19 +325,21 @@ bot.on("message", async (msg) => {
   ];
 
   let progreso = usuario.progreso;
-
-  // Primero, validamos y agregamos las respuestas a las preguntas estándar
+  console.log(progreso < preguntas.length);
+  // Validación de las respuestas y avance en el flujo de preguntas
   if (progreso < preguntas.length) {
+    console.log(progreso);
     let preguntaActual = preguntas[progreso];
 
     if (!preguntaActual.validacion.test(text)) {
       return bot.sendMessage(chatId, preguntaActual.error);
     }
 
+    // Guardamos la respuesta y avanzamos
     usuario[preguntaActual.key] = parseFloat(text);
     usuario.progreso++;
 
-    // Después de todas las preguntas estándar, si el sexo es hombre, preguntamos las preguntas adicionales.
+    // Si hemos completado todas las preguntas estándar, realizamos preguntas adicionales para hombres
     if (
       usuario.sexo &&
       usuario.sexo.toLowerCase() === "hombre" &&
@@ -339,34 +351,11 @@ bot.on("message", async (msg) => {
         { parse_mode: "Markdown" }
       );
     }
+
+    // Continuamos con la siguiente pregunta estándar
+    return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
   }
 
-  // Si llegamos aquí, es porque hemos completado todas las preguntas estándar
-  // Ahora podemos hacer preguntas adicionales específicas para hombres
-  if (usuario.progreso === preguntas.length + 1) {
-    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
-      );
-    }
-    usuario.pectoral_inspirado = parseFloat(text);
-    return bot.sendMessage(
-      chatId,
-      "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
-      { parse_mode: "Markdown" }
-    );
-  }
-
-  if (usuario.progreso === preguntas.length + 2) {
-    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-      return bot.sendMessage(
-        chatId,
-        "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
-      );
-    }
-    usuario.pectoral_espirado = parseFloat(text);
-    usuario.progreso++;
-  }
+  // Si ya completó todas las preguntas estándar y adicionales, finalizamos el proceso.
   await procesarDatos(chatId, usuario);
 });
