@@ -18,7 +18,7 @@ const TOKEN = "7804878428:AAGxzPB0be7bN8uvDN3NVTy5M_NAGqBQ5uQ";
 const bot = new TelegramBot(TOKEN, { polling: true });
 const axios = require("axios"); // Asegúrate de instalar axios con `npm install axios`
 
-const GOOGLE_SHEETS_URL = `https://script.google.com/macros/s/AKfycbxDF_TAbLAYNYu5QsuGcImqHC6PO-Fle6fXFlvSt1LJjZs6HfXMj3d3IgbBQodmFSGs/exec`;
+const GOOGLE_SHEETS_URL = `https://script.google.com/macros/s/AKfycbw2U2UtlRc4sBYxFCtOuYHVXg7Vwl4jCJtS33RmM_oONYjspby6N9rtb4we4ugs2SHH/exec`;
 const enviarDatosAGoogleSheets = async (datos) => {
   try {
     const response = await axios.post(
@@ -185,6 +185,10 @@ bot.on("message", async (msg) => {
   if (!usuario.confirmado) {
     if (text.toLowerCase() === "si") {
       usuario.confirmado = true;
+      return bot.sendMessage(
+        chatId,
+        `✅ ¡Hola, por favor, ingresa el nombre del paciente`
+      );
     } else if (text.toLowerCase() === "no") {
       usuario.telefono = null;
       return bot.sendMessage(
@@ -339,15 +343,29 @@ bot.on("message", async (msg) => {
     usuario[preguntaActual.key] = parseFloat(text);
     usuario.progreso++;
 
-    // Si hemos completado todas las preguntas estándar, realizamos preguntas adicionales para hombres
     if (
       usuario.sexo &&
       usuario.sexo.toLowerCase() === "hombre" &&
       usuario.progreso === preguntas.length
     ) {
-      return bot.sendMessage(
+      // Pregunta de pectoral inspirado
+      await bot.sendMessage(
         chatId,
         "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
+        { parse_mode: "Markdown" }
+      );
+      return; // Esperamos la respuesta antes de pasar a la siguiente pregunta
+    }
+
+    // Si ya se respondió a la pregunta de pectoral inspirado, preguntar por el pectoral espirado
+    if (
+      usuario.sexo &&
+      usuario.sexo.toLowerCase() === "hombre" &&
+      usuario.progreso === preguntas.length + 1
+    ) {
+      return bot.sendMessage(
+        chatId,
+        "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
         { parse_mode: "Markdown" }
       );
     }
