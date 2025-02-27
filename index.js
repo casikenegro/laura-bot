@@ -348,33 +348,45 @@ bot.on("message", async (msg) => {
       usuario.sexo.toLowerCase() === "hombre" &&
       usuario.progreso === preguntas.length
     ) {
-      // Pregunta de pectoral inspirado
-      await bot.sendMessage(
-        chatId,
-        "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
-        { parse_mode: "Markdown" }
-      );
-      return; // Esperamos la respuesta antes de pasar a la siguiente pregunta
-    }
+      // Pregunta por el pectoral inspirado
+      if (!usuario.pectoral_inspirado) {
+        if (/^\d+(\.\d+)?$/.test(text)) {
+          usuario.pectoral_inspirado = parseFloat(text); // Guardamos la respuesta
+          usuario.progreso++; // Avanzamos al siguiente paso
+          return bot.sendMessage(
+            chatId,
+            "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
+            { parse_mode: "Markdown" }
+          );
+        } else {
+          return bot.sendMessage(
+            chatId,
+            "❌ Ingresa una medida válida para el *pectoral inspirado* (en cm)."
+          );
+        }
+      }
 
-    // Si ya se respondió a la pregunta de pectoral inspirado, preguntar por el pectoral espirado
-    if (
-      usuario.sexo &&
-      usuario.sexo.toLowerCase() === "hombre" &&
-      usuario.progreso === preguntas.length + 1
-    ) {
-      return bot.sendMessage(
-        chatId,
-        "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
-        { parse_mode: "Markdown" }
-      );
-    }
+      // Pregunta por el pectoral espirado solo después de haber respondido correctamente al pectoral inspirado
+      if (!usuario.pectoral_espirado) {
+        if (/^\d+(\.\d+)?$/.test(text)) {
+          usuario.pectoral_espirado = parseFloat(text); // Guardamos la respuesta
+          usuario.progreso++; // Esto te ayudará a avanzar en el flujo de preguntas si es necesario
+          // Aquí ya puedes proceder con lo que quieras hacer después, como procesar los datos.
+        } else {
+          return bot.sendMessage(
+            chatId,
+            "❌ Ingresa una medida válida para el *pectoral espirado* (en cm)."
+          );
+        }
+      }
 
-    if (preguntas[usuario.progreso].pregunta) {
-      return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
+      if (preguntas[usuario.progreso].pregunta) {
+        return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
+      }
     }
   }
-
-  // Si ya completó todas las preguntas estándar y adicionales, finalizamos el proceso.
-  await procesarDatos(chatId, usuario);
+  if (progreso >= preguntas.length) {
+    // Si ya completó todas las preguntas estándar y adicionales, finalizamos el proceso.
+    await procesarDatos(chatId, usuario);
+  }
 });
