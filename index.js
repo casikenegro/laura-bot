@@ -172,7 +172,7 @@ bot.on("message", async (msg) => {
         "❌ El número debe ser válido (al menos 10 dígitos). Inténtalo de nuevo."
       );
     }
-    userData.telefono = text;
+    usuario.telefono = text;
     return bot.sendMessage(
       chatId,
       `🔍 Confirmas que tu número es *${text}*?\n\nResponde *Sí* o *No*`,
@@ -316,6 +316,7 @@ bot.on("message", async (msg) => {
 
   let progreso = usuario.progreso;
 
+  // Primero, validamos y agregamos las respuestas a las preguntas estándar
   if (progreso < preguntas.length) {
     let preguntaActual = preguntas[progreso];
 
@@ -326,48 +327,46 @@ bot.on("message", async (msg) => {
     usuario[preguntaActual.key] = parseFloat(text);
     usuario.progreso++;
 
-    if (usuario.sexo && usuario.sexo.toLowerCase() === "hombre") {
-      console.log(usuario.progreso);
-      // Proceder con las validaciones específicas para hombres
-      if (usario.progreso === 15) {
-        return bot.sendMessage(
-          chatId,
-          "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
-          { parse_mode: "Markdown" }
-        );
-      }
-
-      if (usario.progreso === 16) {
-        if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-          return bot.sendMessage(
-            chatId,
-            "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
-          );
-        }
-        usario.pectoral_inspirado = parseFloat(text);
-        return bot.sendMessage(
-          chatId,
-          "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
-          { parse_mode: "Markdown" }
-        );
-      }
-
-      if (usario.progreso === 17) {
-        if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
-          return bot.sendMessage(
-            chatId,
-            "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
-          );
-        }
-        usario.pectoral_espirado = parseFloat(text);
-      }
-    }
-
-    if (usario.progreso < preguntas.length) {
-      return bot.sendMessage(chatId, preguntas[usario.progreso].pregunta, {
-        parse_mode: "Markdown",
-      });
+    // Después de todas las preguntas estándar, si el sexo es hombre, preguntamos las preguntas adicionales.
+    if (
+      usuario.sexo &&
+      usuario.sexo.toLowerCase() === "hombre" &&
+      usuario.progreso === preguntas.length
+    ) {
+      return bot.sendMessage(
+        chatId,
+        "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?",
+        { parse_mode: "Markdown" }
+      );
     }
   }
-  await procesarDatos(chatId, usario);
+
+  // Si llegamos aquí, es porque hemos completado todas las preguntas estándar
+  // Ahora podemos hacer preguntas adicionales específicas para hombres
+  if (usuario.progreso === preguntas.length + 1) {
+    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+      return bot.sendMessage(
+        chatId,
+        "❌ Ingresa un valor válido en cm (Ej: 90.5) para pectoral inspirado."
+      );
+    }
+    usuario.pectoral_inspirado = parseFloat(text);
+    return bot.sendMessage(
+      chatId,
+      "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
+      { parse_mode: "Markdown" }
+    );
+  }
+
+  if (usuario.progreso === preguntas.length + 2) {
+    if (!/^\d+(\.\d+)?$/.test(text) || parseFloat(text) <= 0) {
+      return bot.sendMessage(
+        chatId,
+        "❌ Ingresa un valor válido en cm (Ej: 88.0) para pectoral espirado."
+      );
+    }
+    usuario.pectoral_espirado = parseFloat(text);
+    usuario.progreso++;
+  }
+  await procesarDatos(chatId, usuario);
 });
