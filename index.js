@@ -179,11 +179,6 @@ bot.on("message", async (msg) => {
     if (text.toLowerCase() === "si") {
       userData.confirmado = true;
       usuarios[userData.tlf] = { telefono: userData.tlf, progreso: 0 };
-      return bot.sendMessage(
-        chatId,
-        "✅ Número confirmado. ¿Cuál es tu *nombre y apellido*?",
-        { parse_mode: "Markdown" }
-      );
     } else if (text.toLowerCase() === "no") {
       userData.tlf = null;
       return bot.sendMessage(
@@ -203,6 +198,12 @@ bot.on("message", async (msg) => {
 
   // Preguntas en orden de flujo
   const preguntas = [
+    {
+      key: "nombre",
+      pregunta: "📝 ¿Cuál es tu *nombre y apellido*?",
+      validacion: /^[a-zA-Z\s]+$/,
+      error: "❌ Ingresa un nombre y apellido válido (solo letras y espacios).",
+    },
     {
       key: "estatura",
       pregunta: "📏 ¿Cuál es tu *estatura* en metros?",
