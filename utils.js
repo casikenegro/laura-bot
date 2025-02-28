@@ -93,25 +93,69 @@ const calcularPercentilGrasa = (sexo, edad, pliegues) => {
 
   // Calcular porcentaje de grasa usando la ecuación de Siri
   let porcentajeGrasa = 495 / densidadCorporal - 450;
-  porcentajeGrasa = Math.max(3, Math.min(50, porcentajeGrasa)); // Limitar a valores realistas
+  porcentajeGrasa = Math.max(3, Math.min(50, porcentajeGrasa)).toFixed(2); // Limitar a valores realistas
 
   // **Clasificación de grasa corporal basada en Frisancho**
-  let percentil;
-  if (sexo === "hombre") {
-    if (sumaPliegues < 20) percentil = "< 5% (Muy bajo)";
-    else if (sumaPliegues < 40) percentil = "5-15% (Bajo)";
-    else if (sumaPliegues < 60) percentil = "15-50% (Normal)";
-    else if (sumaPliegues < 80) percentil = "50-85% (Sobrepeso)";
-    else percentil = "> 85% (Obesidad)";
-  } else {
-    if (sumaPliegues < 30) percentil = "< 5% (Muy bajo)";
-    else if (sumaPliegues < 50) percentil = "5-15% (Bajo)";
-    else if (sumaPliegues < 70) percentil = "15-50% (Normal)";
-    else if (sumaPliegues < 90) percentil = "50-85% (Sobrepeso)";
-    else percentil = "> 85% (Obesidad)";
+  let percentil = obtenerPercentil(sexo, edad, porcentajeGrasa);
+  let interpretacion = `el percentil es : ${percentil}`;
+  if (percentil <= 5) interpretacion += `, magro`;
+  if (percentil > 5 && percentil <= 15)
+    interpretacion += `, grasa debajo del promedio`;
+  if (percentil > 15 && percentil <= 75) interpretacion += `, grasa promedio`;
+  if (percentil > 75 && percentil <= 85)
+    interpretacion += `, grasa arriba del promedio`;
+  if (percentil > 85) interpretacion += `, exceso de grasa`;
+
+  return { porcentajeGrasa, percentil: interpretacion };
+};
+
+const obtenerPercentil = (sexo, edad, porcentajeGrasa) => {
+  const tablas = {
+    hombre: [
+      { rango: [18, 24], valores: [8, 9, 10, 12, 16, 20, 23, 25, 26, 28] },
+      { rango: [25, 29], valores: [9, 10, 11, 13, 18, 23, 25, 26, 29, 29] },
+      { rango: [30, 34], valores: [16, 17, 18, 20, 23, 26, 27, 28, 30, 30] },
+      { rango: [35, 39], valores: [15, 17, 18, 20, 23, 25, 27, 27, 29, 29] },
+      { rango: [40, 44], valores: [14, 16, 18, 21, 26, 30, 32, 34, 36, 36] },
+      { rango: [45, 49], valores: [15, 17, 19, 21, 26, 30, 32, 34, 36, 36] },
+      { rango: [50, 54], valores: [15, 17, 19, 22, 27, 31, 33, 35, 37, 37] },
+      { rango: [55, 59], valores: [15, 18, 20, 22, 27, 31, 33, 35, 37, 37] },
+    ],
+    mujer: [
+      { rango: [18, 24], valores: [17, 19, 21, 23, 27, 33, 35, 37, 40, 40] },
+      { rango: [25, 29], valores: [18, 20, 21, 24, 29, 34, 37, 39, 41, 41] },
+      { rango: [30, 34], valores: [21, 23, 25, 27, 31, 36, 38, 40, 42, 42] },
+      { rango: [35, 39], valores: [22, 24, 25, 28, 32, 37, 39, 40, 42, 42] },
+      { rango: [40, 44], valores: [25, 28, 29, 31, 35, 39, 41, 42, 43, 43] },
+      { rango: [45, 49], valores: [26, 28, 29, 32, 36, 39, 41, 42, 44, 44] },
+      { rango: [50, 54], valores: [27, 30, 32, 35, 39, 43, 46, 47, 48, 48] },
+      { rango: [55, 59], valores: [27, 30, 32, 35, 39, 44, 45, 47, 49, 49] },
+    ],
+  };
+
+  const rangoEncontrado = tablas[sexo].find(
+    (rango) => edad >= rango.rango[0] && edad <= rango.rango[1]
+  );
+
+  if (!rangoEncontrado) {
+    return "Edad fuera de rango";
   }
 
-  return { porcentajeGrasa: porcentajeGrasa.toFixed(2), percentil };
+  const valoresPercentil = rangoEncontrado.valores;
+  let percentil;
+
+  if (porcentajeGrasa <= valoresPercentil[0]) percentil = 5;
+  else if (porcentajeGrasa <= valoresPercentil[1]) percentil = 10;
+  else if (porcentajeGrasa <= valoresPercentil[2]) percentil = 15;
+  else if (porcentajeGrasa <= valoresPercentil[3]) percentil = 25;
+  else if (porcentajeGrasa <= valoresPercentil[4]) percentil = 50;
+  else if (porcentajeGrasa <= valoresPercentil[5]) percentil = 75;
+  else if (porcentajeGrasa <= valoresPercentil[6]) percentil = 85;
+  else if (porcentajeGrasa <= valoresPercentil[7]) percentil = 90;
+  else if (porcentajeGrasa <= valoresPercentil[8]) percentil = 95;
+  else percentil = 95;
+
+  return percentil;
 };
 
 module.exports = {

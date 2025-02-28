@@ -159,53 +159,48 @@ bot.on("message", async (msg) => {
       nombre: null,
       sexo: null,
     };
+
     return bot.sendMessage(
       chatId,
-      `✅ ¡Hola, por favor, ingresa el nombre del paciente`
+      "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
     );
-    // return bot.sendMessage(
-    //   chatId,
-    //   "🔄 El proceso ha sido reiniciado. Inicia de nuevo ingresando tu número de teléfono."
-    // );
   }
 
-  // Primero, verificar si el teléfono ya ha sido proporcionado y validado.
-  // if (!usuario.telefono) {
-  //   if (!/^\d{10,}$/.test(text)) {
-  //     return bot.sendMessage(
-  //       chatId,
-  //       "❌ El número debe ser válido (al menos 10 dígitos). Inténtalo de nuevo."
-  //     );
-  //   }
-  //   usuario.telefono = text;
-  //   return bot.sendMessage(
-  //     chatId,
-  //     `🔍 Confirmas que tu número es *${text}*?\n\nResponde *Sí* o *No*`,
-  //     { parse_mode: "Markdown" }
-  //   );
-  // }
+  if (!usuario.telefono) {
+    if (!/^\d{10,}$/.test(text)) {
+      return bot.sendMessage(
+        chatId,
+        "❌ El número debe ser válido (al menos 10 dígitos). Inténtalo de nuevo."
+      );
+    }
+    usuario.telefono = text;
+    return bot.sendMessage(
+      chatId,
+      `🔍 Confirmas que tu número es *${text}*?\n\nResponde *Sí* o *No*`,
+      { parse_mode: "Markdown" }
+    );
+  }
 
-  // Validación del número de teléfono
-  // if (!usuario.confirmado) {
-  //   if (text.toLowerCase() === "si") {
-  //     usuario.confirmado = true;
-  //     return bot.sendMessage(
-  //       chatId,
-  //       `✅ ¡Hola, por favor, ingresa el nombre del paciente`
-  //     );
-  //   } else if (text.toLowerCase() === "no") {
-  //     usuario.telefono = null;
-  //     return bot.sendMessage(
-  //       chatId,
-  //       "❌ Número incorrecto. Ingresa nuevamente:"
-  //     );
-  //   } else {
-  //     return bot.sendMessage(
-  //       chatId,
-  //       "❌ Responde *Sí* o *No* para confirmar tu número."
-  //     );
-  //   }
-  // }
+  if (!usuario.confirmado) {
+    if (text.toLowerCase() === "si") {
+      usuario.confirmado = true;
+      return bot.sendMessage(
+        chatId,
+        `✅ ¡Hola, por favor, ingresa el nombre del paciente`
+      );
+    } else if (text.toLowerCase() === "no") {
+      usuario.telefono = null;
+      return bot.sendMessage(
+        chatId,
+        "❌ Número incorrecto. Ingresa nuevamente:"
+      );
+    } else {
+      return bot.sendMessage(
+        chatId,
+        "❌ Responde *Sí* o *No* para confirmar tu número."
+      );
+    }
+  }
 
   // Preguntar por el nombre
   if (!usuario.nombre) {
@@ -255,7 +250,7 @@ bot.on("message", async (msg) => {
     {
       key: "peso",
       pregunta: "⚖️ ¿Cuál es tu *peso corporal* en kg?",
-      validacion: /^\d+$/,
+      validacion: /^\d+(\.\d+)?$/,
       error: "❌ Ingresa un peso válido en kg.",
     },
     {
@@ -349,57 +344,56 @@ bot.on("message", async (msg) => {
     usuario.progreso++;
     console.log("progreso usuario", usuario.progreso);
     if (
-      usuario.sexo &&
-      usuario.sexo.toLowerCase() === "hombre" &&
-      usuario.progreso === preguntas.length
-    ) {
-      // Pregunta por el pectoral inspirado
-      if (!usuario.pectoral_inspirado) {
-        console.log("entro a pectoral");
-        if (/^\d+(\.\d+)?$/.test(text)) {
-          usuario.pectoral_inspirado = parseFloat(text); // Guardamos la respuesta
-          usuario.progreso++; // Avanzamos al siguiente paso
-          return bot.sendMessage(
-            chatId,
-            "📏 ¿Cuánto mide tu *pectoral espirado* en cm?",
-            { parse_mode: "Markdown" }
-          );
-        } else {
-          return bot.sendMessage(
-            chatId,
-            "❌ Ingresa una medida válida para el *pectoral inspirado* (en cm)."
-          );
-        }
-      }
-
-      // Pregunta por el pectoral espirado solo después de haber respondido correctamente al pectoral inspirado
-      if (usuario.pectoral_inspirado) {
-        console.log("entro a espirado");
-
-        if (/^\d+(\.\d+)?$/.test(text)) {
-          usuario.pectoral_espirado = parseFloat(text); // Guardamos la respuesta
-          usuario.progreso++; // Esto te ayudará a avanzar en el flujo de preguntas si es necesario
-          // Aquí ya puedes proceder con lo que quieras hacer después, como procesar los datos.
-        } else {
-          return bot.sendMessage(
-            chatId,
-            "❌ Ingresa una medida válida para el *pectoral espirado* (en cm)."
-          );
-        }
-      }
-    }
-    if (
       usuario.sexo.toLowerCase() === "mujer" &&
       usuario.progreso === preguntas.length
-    )
-      usuario.progreso++;
+    ) {
+      await procesarDatos(chatId, usuario);
+    }
 
     if (preguntas[usuario.progreso]?.pregunta) {
       return bot.sendMessage(chatId, preguntas[usuario.progreso].pregunta);
     }
   }
-  if (progreso >= preguntas.length) {
-    // Si ya completó todas las preguntas estándar y adicionales, finalizamos el proceso.
-    await procesarDatos(chatId, usuario);
+  if (usuario.sexo === "hombre" && usuario.progreso >= preguntas.length) {
+    // Preguntar primero por el pectoral inspirado
+    if (usuario.pectoral_inspirado === undefined) {
+      usuario.pectoral_inspirado = null; // Inicializamos en null para que luego se capture correctamente
+      return bot.sendMessage(
+        chatId,
+        "📏 ¿Cuánto mide tu *pectoral inspirado* en cm?"
+      );
+    }
+
+    if (usuario.pectoral_inspirado === null) {
+      if (!/^\d+(\.\d+)?$/.test(text)) {
+        return bot.sendMessage(
+          chatId,
+          "❌ Ingresa una medida válida para el *pectoral inspirado* (en cm)."
+        );
+      }
+      usuario.pectoral_inspirado = parseFloat(text);
+    }
+
+    // Validar que no se pregunte dos veces el pectoral espirado
+    if (usuario.pectoral_espirado === undefined) {
+      usuario.pectoral_espirado = null; // Se inicializa en null para evitar errores
+      return bot.sendMessage(
+        chatId,
+        "📏 ¿Cuánto mide tu *pectoral espirado* en cm?"
+      );
+    }
+
+    if (usuario.pectoral_espirado === null) {
+      if (!/^\d+(\.\d+)?$/.test(text)) {
+        return bot.sendMessage(
+          chatId,
+          "❌ Ingresa una medida válida para el *pectoral espirado* (en cm)."
+        );
+      }
+      usuario.pectoral_espirado = parseFloat(text);
+
+      // Una vez completado todo, procesamos los datos
+      return procesarDatos(chatId, usuario);
+    }
   }
 });
